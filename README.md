@@ -13,7 +13,7 @@
 
 ## 在线体验
 
-访问 [GitHub Pages](https://wujiang1999.github.io/book-of-answers/) 在线体验。
+部署在 Vercel，访问链接请查看仓库首页的 Vercel 部署预览。
 
 ## 本地运行
 
@@ -76,6 +76,21 @@ book-of-answers/
 - [x] 历史记录功能
 - [ ] 答案分享功能
 - [ ] 更多动画效果
+
+## 部署到 Vercel
+
+本项目已配置 Vercel 部署，可以通过以下方式部署：
+
+1. 在 Vercel 官网导入此 GitHub 仓库
+2. Vercel 会自动识别 `vercel.json` 配置
+3. 点击 Deploy 即可完成部署
+
+或使用 Vercel CLI：
+```bash
+npm i -g vercel
+vercel login
+vercel
+```
 
 ## 许可证
 

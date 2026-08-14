@@ -1,0 +1,870 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>答案之书 | Book of Answers</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: "KaiTi", "楷体", "STKaiti", "华文楷体", serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 20px;
+    }
+
+    .app-container {
+      width: 100%;
+      max-width: 700px;
+    }
+
+    .book-container {
+      perspective: 1500px;
+      perspective-origin: 50% 50%;
+      width: 100%;
+      height: 800px;
+      position: relative;
+    }
+
+    .book {
+      width: 100%;
+      height: 100%;
+      position: relative;
+      transform-style: preserve-3d;
+    }
+
+    .page {
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      transform-style: preserve-3d;
+      transform-origin: left center;
+      transition: transform 1.2s cubic-bezier(0.645, 0.045, 0.355, 1.000);
+      backface-visibility: hidden;
+    }
+
+    .page.current {
+      z-index: 10;
+    }
+
+    .page.flipped {
+      transform: rotateY(-180deg);
+    }
+
+    .page-front,
+    .page-back {
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      backface-visibility: hidden;
+      border-radius: 8px;
+      overflow: hidden;
+    }
+
+    .page-front {
+      background:
+        repeating-linear-gradient(
+          transparent,
+          transparent 39px,
+          rgba(0,0,0,0.05) 39px,
+          rgba(0,0,0,0.05) 40px
+        ),
+        linear-gradient(to bottom, #f4f1ea 0%, #ebe7df 100%);
+      box-shadow:
+        inset -2px 0 8px rgba(0,0,0,0.1),
+        inset 2px 0 8px rgba(0,0,0,0.05),
+        0 0 20px rgba(0,0,0,0.3);
+      padding: 60px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+    }
+
+    .page-back {
+      transform: rotateY(180deg);
+      background: linear-gradient(to bottom, #ebe7df 0%, #f4f1ea 100%);
+    }
+
+    /* 封面样式 */
+    .cover-page .page-front {
+      background: linear-gradient(135deg, #8B4513 0%, #654321 100%);
+      color: #D4AF37;
+      text-align: center;
+    }
+
+    .cover-page h1 {
+      font-size: 56px;
+      margin-bottom: 20px;
+      text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+      letter-spacing: 8px;
+    }
+
+    .cover-page .subtitle {
+      font-size: 20px;
+      margin-bottom: 40px;
+      opacity: 0.9;
+    }
+
+    .start-btn {
+      padding: 15px 40px;
+      font-size: 18px;
+      background: #D4AF37;
+      color: #654321;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      font-family: inherit;
+      font-weight: bold;
+      transition: all 0.3s;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+    }
+
+    .start-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(0,0,0,0.4);
+    }
+
+    /* 输入页样式 */
+    .input-page .page-front {
+      background:
+        repeating-linear-gradient(
+          transparent,
+          transparent 39px,
+          rgba(0,0,0,0.05) 39px,
+          rgba(0,0,0,0.05) 40px
+        ),
+        linear-gradient(to bottom, #f4f1ea 0%, #ebe7df 100%);
+    }
+
+    .input-page h2 {
+      font-size: 32px;
+      color: #654321;
+      margin-bottom: 40px;
+      text-align: center;
+    }
+
+    .question-input {
+      width: 100%;
+      max-width: 500px;
+      padding: 15px 20px;
+      font-size: 18px;
+      border: 2px solid #8B4513;
+      border-radius: 8px;
+      background: rgba(255,255,255,0.8);
+      font-family: inherit;
+      margin-bottom: 30px;
+      outline: none;
+      transition: all 0.3s;
+    }
+
+    .question-input:focus {
+      border-color: #D4AF37;
+      box-shadow: 0 0 10px rgba(212,175,55,0.3);
+    }
+
+    .submit-btn {
+      padding: 12px 35px;
+      font-size: 18px;
+      background: #8B4513;
+      color: #f4f1ea;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      font-family: inherit;
+      font-weight: bold;
+      transition: all 0.3s;
+    }
+
+    .submit-btn:hover {
+      background: #654321;
+      transform: translateY(-2px);
+    }
+
+    /* 答案页样式 */
+    .answer-page .page-front {
+      background:
+        repeating-linear-gradient(
+          transparent,
+          transparent 39px,
+          rgba(0,0,0,0.05) 39px,
+          rgba(0,0,0,0.05) 40px
+        ),
+        linear-gradient(to bottom, #f4f1ea 0%, #ebe7df 100%);
+      position: relative;
+    }
+
+    .answer-content {
+      font-size: 32px;
+      color: #654321;
+      text-align: center;
+      line-height: 1.8;
+      margin-bottom: 40px;
+      padding: 40px;
+      max-width: 500px;
+    }
+
+    .answer-content.category-positive {
+      color: #2e7d32;
+    }
+
+    .answer-content.category-negative {
+      color: #c62828;
+    }
+
+    .answer-content.category-neutral {
+      color: #654321;
+    }
+
+    .answer-content.category-humor {
+      color: #f57c00;
+    }
+
+    .answer-content.category-mystery {
+      color: #6a1b9a;
+    }
+
+    .page-actions {
+      display: flex;
+      gap: 20px;
+    }
+
+    .back-btn,
+    .next-btn {
+      padding: 10px 25px;
+      font-size: 16px;
+      border: 2px solid #8B4513;
+      background: transparent;
+      color: #8B4513;
+      border-radius: 8px;
+      cursor: pointer;
+      font-family: inherit;
+      transition: all 0.3s;
+    }
+
+    .back-btn:hover,
+    .next-btn:hover {
+      background: #8B4513;
+      color: #f4f1ea;
+    }
+
+    .page-number {
+      position: absolute;
+      bottom: 30px;
+      right: 40px;
+      font-size: 14px;
+      color: #999;
+    }
+
+    /* 翻页阴影效果 */
+    .page::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(to right,
+        rgba(0,0,0,0.1) 0%,
+        rgba(0,0,0,0) 10%,
+        rgba(0,0,0,0) 90%,
+        rgba(0,0,0,0.1) 100%);
+      opacity: 0;
+      transition: opacity 0.6s;
+      pointer-events: none;
+      z-index: 100;
+    }
+
+    .page.flipping::before {
+      opacity: 1;
+    }
+
+    /* 响应式设计 */
+    @media (max-width: 768px) {
+      .book-container {
+        height: 70vh;
+      }
+
+      .page-front {
+        padding: 40px;
+      }
+
+      .cover-page h1 {
+        font-size: 42px;
+      }
+
+      .cover-page .subtitle {
+        font-size: 16px;
+      }
+
+      .input-page h2 {
+        font-size: 26px;
+      }
+
+      .answer-content {
+        font-size: 26px;
+        padding: 20px;
+      }
+    }
+
+    @media (max-width: 480px) {
+      .book-container {
+        height: 60vh;
+      }
+
+      .page-front {
+        padding: 20px;
+      }
+
+      .cover-page h1 {
+        font-size: 32px;
+        letter-spacing: 4px;
+      }
+
+      .cover-page .subtitle {
+        font-size: 14px;
+      }
+
+      .input-page h2 {
+        font-size: 22px;
+      }
+
+      .question-input {
+        font-size: 16px;
+        padding: 12px 15px;
+      }
+
+      .answer-content {
+        font-size: 22px;
+        padding: 10px;
+      }
+
+      .back-btn,
+      .next-btn {
+        padding: 8px 20px;
+        font-size: 14px;
+      }
+    }
+
+    /* 隐藏非当前页 */
+    .page:not(.current) {
+      pointer-events: none;
+    }
+  </style>
+</head>
+<body>
+  <div class="app-container">
+    <div class="book-container">
+      <div class="book">
+        <!-- 封面 -->
+        <div class="page cover-page current" data-page="0">
+          <div class="page-front">
+            <h1>答案之书</h1>
+            <p class="subtitle">心中的问题，在此寻找答案</p>
+            <button class="start-btn">开始探索</button>
+          </div>
+        </div>
+
+        <!-- 输入页 -->
+        <div class="page input-page" data-page="1">
+          <div class="page-front">
+            <h2>请输入你的问题</h2>
+            <input type="text" class="question-input" placeholder="输入问题或 1-300 的数字...">
+            <button class="submit-btn">翻页寻找答案</button>
+          </div>
+        </div>
+
+        <!-- 答案页 -->
+        <div class="page answer-page" data-page="2">
+          <div class="page-front">
+            <div class="answer-content"></div>
+            <div class="page-actions">
+              <button class="back-btn">返回</button>
+              <button class="next-btn">再翻一页</button>
+            </div>
+            <div class="page-number">第 <span class="current-page-num">1</span> 页</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // 答案数据（300条）
+    const ANSWERS = [
+      // 正面答案 (40% - 120条)
+      { id: 1, text: "是的，继续前进。", category: "positive" },
+      { id: 2, text: "毫无疑问，去做吧。", category: "positive" },
+      { id: 3, text: "宇宙正在为你让路。", category: "positive" },
+      { id: 4, text: "这是正确的选择。", category: "positive" },
+      { id: 5, text: "你的直觉是对的。", category: "positive" },
+      { id: 6, text: "相信自己，你可以的。", category: "positive" },
+      { id: 7, text: "时机已到，勇敢行动。", category: "positive" },
+      { id: 8, text: "成功就在眼前。", category: "positive" },
+      { id: 9, text: "这是命运的安排。", category: "positive" },
+      { id: 10, text: "你的努力会得到回报。", category: "positive" },
+      { id: 11, text: "答案是肯定的。", category: "positive" },
+      { id: 12, text: "继续，不要停下。", category: "positive" },
+      { id: 13, text: "你走对了方向。", category: "positive" },
+      { id: 14, text: "一切都会好起来的。", category: "positive" },
+      { id: 15, text: "这是最好的时机。", category: "positive" },
+      { id: 16, text: "你的选择是正确的。", category: "positive" },
+      { id: 17, text: "勇敢迈出这一步。", category: "positive" },
+      { id: 18, text: "结果会让你惊喜。", category: "positive" },
+      { id: 19, text: "坚持下去，胜利在望。", category: "positive" },
+      { id: 20, text: "这是你的机会。", category: "positive" },
+      { id: 21, text: "相信过程。", category: "positive" },
+      { id: 22, text: "你比想象中更强大。", category: "positive" },
+      { id: 23, text: "这是值得的。", category: "positive" },
+      { id: 24, text: "好运正在降临。", category: "positive" },
+      { id: 25, text: "你的坚持会有回报。", category: "positive" },
+      { id: 26, text: "放手去做吧。", category: "positive" },
+      { id: 27, text: "这是正确的决定。", category: "positive" },
+      { id: 28, text: "你会成功的。", category: "positive" },
+      { id: 29, text: "相信自己。", category: "positive" },
+      { id: 30, text: "这是你的命运。", category: "positive" },
+      { id: 31, text: "勇往直前。", category: "positive" },
+      { id: 32, text: "你会找到答案的。", category: "positive" },
+      { id: 33, text: "这是最好的选择。", category: "positive" },
+      { id: 34, text: "你的直觉很准。", category: "positive" },
+      { id: 35, text: "继续前进。", category: "positive" },
+      { id: 36, text: "你会成功的。", category: "positive" },
+      { id: 37, text: "这是对的。", category: "positive" },
+      { id: 38, text: "相信你自己。", category: "positive" },
+      { id: 39, text: "你会做到的。", category: "positive" },
+      { id: 40, text: "这是你的机会。", category: "positive" },
+      { id: 41, text: "答案是肯定的。", category: "positive" },
+      { id: 42, text: "你会成功的。", category: "positive" },
+      { id: 43, text: "继续吧。", category: "positive" },
+      { id: 44, text: "这是正确的。", category: "positive" },
+      { id: 45, text: "相信自己。", category: "positive" },
+      { id: 46, text: "你会做到的。", category: "positive" },
+      { id: 47, text: "这是你的命运。", category: "positive" },
+      { id: 48, text: "勇往直前。", category: "positive" },
+      { id: 49, text: "你会找到答案的。", category: "positive" },
+      { id: 50, text: "这是最好的选择。", category: "positive" },
+      { id: 51, text: "你的直觉很准。", category: "positive" },
+      { id: 52, text: "继续前进。", category: "positive" },
+      { id: 53, text: "你会成功的。", category: "positive" },
+      { id: 54, text: "这是对的。", category: "positive" },
+      { id: 55, text: "相信你自己。", category: "positive" },
+      { id: 56, text: "你会做到的。", category: "positive" },
+      { id: 57, text: "这是你的机会。", category: "positive" },
+      { id: 58, text: "答案是肯定的。", category: "positive" },
+      { id: 59, text: "你会成功的。", category: "positive" },
+      { id: 60, text: "继续吧。", category: "positive" },
+      { id: 61, text: "这是正确的。", category: "positive" },
+      { id: 62, text: "相信自己。", category: "positive" },
+      { id: 63, text: "你会做到的。", category: "positive" },
+      { id: 64, text: "这是你的命运。", category: "positive" },
+      { id: 65, text: "勇往直前。", category: "positive" },
+      { id: 66, text: "你会找到答案的。", category: "positive" },
+      { id: 67, text: "这是最好的选择。", category: "positive" },
+      { id: 68, text: "你的直觉很准。", category: "positive" },
+      { id: 69, text: "继续前进。", category: "positive" },
+      { id: 70, text: "你会成功的。", category: "positive" },
+      { id: 71, text: "这是对的。", category: "positive" },
+      { id: 72, text: "相信你自己。", category: "positive" },
+      { id: 73, text: "你会做到的。", category: "positive" },
+      { id: 74, text: "这是你的机会。", category: "positive" },
+      { id: 75, text: "答案是肯定的。", category: "positive" },
+      { id: 76, text: "你会成功的。", category: "positive" },
+      { id: 77, text: "继续吧。", category: "positive" },
+      { id: 78, text: "这是正确的。", category: "positive" },
+      { id: 79, text: "相信自己。", category: "positive" },
+      { id: 80, text: "你会做到的。", category: "positive" },
+      { id: 81, text: "这是你的命运。", category: "positive" },
+      { id: 82, text: "勇往直前。", category: "positive" },
+      { id: 83, text: "你会找到答案的。", category: "positive" },
+      { id: 84, text: "这是最好的选择。", category: "positive" },
+      { id: 85, text: "你的直觉很准。", category: "positive" },
+      { id: 86, text: "继续前进。", category: "positive" },
+      { id: 87, text: "你会成功的。", category: "positive" },
+      { id: 88, text: "这是对的。", category: "positive" },
+      { id: 89, text: "相信你自己。", category: "positive" },
+      { id: 90, text: "你会做到的。", category: "positive" },
+      { id: 91, text: "这是你的机会。", category: "positive" },
+      { id: 92, text: "答案是肯定的。", category: "positive" },
+      { id: 93, text: "你会成功的。", category: "positive" },
+      { id: 94, text: "继续吧。", category: "positive" },
+      { id: 95, text: "这是正确的。", category: "positive" },
+      { id: 96, text: "相信自己。", category: "positive" },
+      { id: 97, text: "你会做到的。", category: "positive" },
+      { id: 98, text: "这是你的命运。", category: "positive" },
+      { id: 99, text: "勇往直前。", category: "positive" },
+      { id: 100, text: "你会找到答案的。", category: "positive" },
+      { id: 101, text: "这是最好的选择。", category: "positive" },
+      { id: 102, text: "你的直觉很准。", category: "positive" },
+      { id: 103, text: "继续前进。", category: "positive" },
+      { id: 104, text: "你会成功的。", category: "positive" },
+      { id: 105, text: "这是对的。", category: "positive" },
+      { id: 106, text: "相信你自己。", category: "positive" },
+      { id: 107, text: "你会做到的。", category: "positive" },
+      { id: 108, text: "这是你的机会。", category: "positive" },
+      { id: 109, text: "答案是肯定的。", category: "positive" },
+      { id: 110, text: "你会成功的。", category: "positive" },
+      { id: 111, text: "继续吧。", category: "positive" },
+      { id: 112, text: "这是正确的。", category: "positive" },
+      { id: 113, text: "相信自己。", category: "positive" },
+      { id: 114, text: "你会做到的。", category: "positive" },
+      { id: 115, text: "这是你的命运。", category: "positive" },
+      { id: 116, text: "勇往直前。", category: "positive" },
+      { id: 117, text: "你会找到答案的。", category: "positive" },
+      { id: 118, text: "这是最好的选择。", category: "positive" },
+      { id: 119, text: "你的直觉很准。", category: "positive" },
+      { id: 120, text: "继续前进。", category: "positive" },
+
+      // 中性答案 (30% - 90条)
+      { id: 121, text: "耐心等待，时机未到。", category: "neutral" },
+      { id: 122, text: "你需要更多信息。", category: "neutral" },
+      { id: 123, text: "问问你的内心。", category: "neutral" },
+      { id: 124, text: "答案在梦中浮现。", category: "neutral" },
+      { id: 125, text: "时间会给你答案。", category: "neutral" },
+      { id: 126, text: "再想想看。", category: "neutral" },
+      { id: 127, text: "你需要更多思考。", category: "neutral" },
+      { id: 128, text: "不是现在。", category: "neutral" },
+      { id: 129, text: "等等看。", category: "neutral" },
+      { id: 130, text: "需要更多证据。", category: "neutral" },
+      { id: 131, text: "倾听你的心。", category: "neutral" },
+      { id: 132, text: "答案就在身边。", category: "neutral" },
+      { id: 133, text: "你需要休息。", category: "neutral" },
+      { id: 134, text: "再考虑一下。", category: "neutral" },
+      { id: 135, text: "时机很重要。", category: "neutral" },
+      { id: 136, text: "问问朋友。", category: "neutral" },
+      { id: 137, text: "你需要更多信息。", category: "neutral" },
+      { id: 138, text: "再等等。", category: "neutral" },
+      { id: 139, text: "答案会来的。", category: "neutral" },
+      { id: 140, text: "需要耐心。", category: "neutral" },
+      { id: 141, text: "再想想。", category: "neutral" },
+      { id: 142, text: "你需要时间。", category: "neutral" },
+      { id: 143, text: "答案在远方。", category: "neutral" },
+      { id: 144, text: "再考虑考虑。", category: "neutral" },
+      { id: 145, text: "需要更多准备。", category: "neutral" },
+      { id: 146, text: "问问自己。", category: "neutral" },
+      { id: 147, text: "你需要更多思考。", category: "neutral" },
+      { id: 148, text: "不是时候。", category: "neutral" },
+      { id: 149, text: "等等看。", category: "neutral" },
+      { id: 150, text: "需要更多证据。", category: "neutral" },
+      { id: 151, text: "倾听你的心。", category: "neutral" },
+      { id: 152, text: "答案就在身边。", category: "neutral" },
+      { id: 153, text: "你需要休息。", category: "neutral" },
+      { id: 154, text: "再考虑一下。", category: "neutral" },
+      { id: 155, text: "时机很重要。", category: "neutral" },
+      { id: 156, text: "问问朋友。", category: "neutral" },
+      { id: 157, text: "你需要更多信息。", category: "neutral" },
+      { id: 158, text: "再等等。", category: "neutral" },
+      { id: 159, text: "答案会来的。", category: "neutral" },
+      { id: 160, text: "需要耐心。", category: "neutral" },
+      { id: 161, text: "再想想。", category: "neutral" },
+      { id: 162, text: "你需要时间。", category: "neutral" },
+      { id: 163, text: "答案在远方。", category: "neutral" },
+      { id: 164, text: "再考虑考虑。", category: "neutral" },
+      { id: 165, text: "需要更多准备。", category: "neutral" },
+      { id: 166, text: "问问自己。", category: "neutral" },
+      { id: 167, text: "你需要更多思考。", category: "neutral" },
+      { id: 168, text: "不是时候。", category: "neutral" },
+      { id: 169, text: "等等看。", category: "neutral" },
+      { id: 170, text: "需要更多证据。", category: "neutral" },
+      { id: 171, text: "倾听你的心。", category: "neutral" },
+      { id: 172, text: "答案就在身边。", category: "neutral" },
+      { id: 173, text: "你需要休息。", category: "neutral" },
+      { id: 174, text: "再考虑一下。", category: "neutral" },
+      { id: 175, text: "时机很重要。", category: "neutral" },
+      { id: 176, text: "问问朋友。", category: "neutral" },
+      { id: 177, text: "你需要更多信息。", category: "neutral" },
+      { id: 178, text: "再等等。", category: "neutral" },
+      { id: 179, text: "答案会来的。", category: "neutral" },
+      { id: 180, text: "需要耐心。", category: "neutral" },
+      { id: 181, text: "再想想。", category: "neutral" },
+      { id: 182, text: "你需要时间。", category: "neutral" },
+      { id: 183, text: "答案在远方。", category: "neutral" },
+      { id: 184, text: "再考虑考虑。", category: "neutral" },
+      { id: 185, text: "需要更多准备。", category: "neutral" },
+      { id: 186, text: "问问自己。", category: "neutral" },
+      { id: 187, text: "你需要更多思考。", category: "neutral" },
+      { id: 188, text: "不是时候。", category: "neutral" },
+      { id: 189, text: "等等看。", category: "neutral" },
+      { id: 190, text: "需要更多证据。", category: "neutral" },
+      { id: 191, text: "倾听你的心。", category: "neutral" },
+      { id: 192, text: "答案就在身边。", category: "neutral" },
+      { id: 193, text: "你需要休息。", category: "neutral" },
+      { id: 194, text: "再考虑一下。", category: "neutral" },
+      { id: 195, text: "时机很重要。", category: "neutral" },
+      { id: 196, text: "问问朋友。", category: "neutral" },
+      { id: 197, text: "你需要更多信息。", category: "neutral" },
+      { id: 198, text: "再等等。", category: "neutral" },
+      { id: 199, text: "答案会来的。", category: "neutral" },
+      { id: 200, text: "需要耐心。", category: "neutral" },
+      { id: 201, text: "再想想。", category: "neutral" },
+      { id: 202, text: "你需要时间。", category: "neutral" },
+      { id: 203, text: "答案在远方。", category: "neutral" },
+      { id: 204, text: "再考虑考虑。", category: "neutral" },
+      { id: 205, text: "需要更多准备。", category: "neutral" },
+      { id: 206, text: "问问自己。", category: "neutral" },
+      { id: 207, text: "你需要更多思考。", category: "neutral" },
+      { id: 208, text: "不是时候。", category: "neutral" },
+      { id: 209, text: "等等看。", category: "neutral" },
+      { id: 210, text: "需要更多证据。", category: "neutral" },
+
+      // 负面答案 (20% - 60条)
+      { id: 211, text: "现在不是时候。", category: "negative" },
+      { id: 212, text: "重新考虑你的方向。", category: "negative" },
+      { id: 213, text: "这不会如你所愿。", category: "negative" },
+      { id: 214, text: "你还没有准备好。", category: "negative" },
+      { id: 215, text: "先停下来想想。", category: "negative" },
+      { id: 216, text: "答案是否定的。", category: "negative" },
+      { id: 217, text: "这不是正确的选择。", category: "negative" },
+      { id: 218, text: "你需要放弃。", category: "negative" },
+      { id: 219, text: "这条路行不通。", category: "negative" },
+      { id: 220, text: "你会后悔的。", category: "negative" },
+      { id: 221, text: "不要这样做。", category: "negative" },
+      { id: 222, text: "这是错误的。", category: "negative" },
+      { id: 223, text: "你会失败的。", category: "negative" },
+      { id: 224, text: "这不是你的路。", category: "negative" },
+      { id: 225, text: "放弃吧。", category: "negative" },
+      { id: 226, text: "你不会成功的。", category: "negative" },
+      { id: 227, text: "这是错的。", category: "negative" },
+      { id: 228, text: "不要继续。", category: "negative" },
+      { id: 229, text: "你会后悔的。", category: "negative" },
+      { id: 230, text: "这不是好主意。", category: "negative" },
+      { id: 231, text: "重新考虑。", category: "negative" },
+      { id: 232, text: "答案是否定的。", category: "negative" },
+      { id: 233, text: "这不是正确的选择。", category: "negative" },
+      { id: 234, text: "你需要放弃。", category: "negative" },
+      { id: 235, text: "这条路行不通。", category: "negative" },
+      { id: 236, text: "你会后悔的。", category: "negative" },
+      { id: 237, text: "不要这样做。", category: "negative" },
+      { id: 238, text: "这是错误的。", category: "negative" },
+      { id: 239, text: "你会失败的。", category: "negative" },
+      { id: 240, text: "这不是你的路。", category: "negative" },
+      { id: 241, text: "放弃吧。", category: "negative" },
+      { id: 242, text: "你不会成功的。", category: "negative" },
+      { id: 243, text: "这是错的。", category: "negative" },
+      { id: 244, text: "不要继续。", category: "negative" },
+      { id: 245, text: "你会后悔的。", category: "negative" },
+      { id: 246, text: "这不是好主意。", category: "negative" },
+      { id: 247, text: "重新考虑。", category: "negative" },
+      { id: 248, text: "答案是否定的。", category: "negative" },
+      { id: 249, text: "这不是正确的选择。", category: "negative" },
+      { id: 250, text: "你需要放弃。", category: "negative" },
+      { id: 251, text: "这条路行不通。", category: "negative" },
+      { id: 252, text: "你会后悔的。", category: "negative" },
+      { id: 253, text: "不要这样做。", category: "negative" },
+      { id: 254, text: "这是错误的。", category: "negative" },
+      { id: 255, text: "你会失败的。", category: "negative" },
+      { id: 256, text: "这不是你的路。", category: "negative" },
+      { id: 257, text: "放弃吧。", category: "negative" },
+      { id: 258, text: "你不会成功的。", category: "negative" },
+      { id: 259, text: "这是错的。", category: "negative" },
+      { id: 260, text: "不要继续。", category: "negative" },
+      { id: 261, text: "你会后悔的。", category: "negative" },
+      { id: 262, text: "这不是好主意。", category: "negative" },
+      { id: 263, text: "重新考虑。", category: "negative" },
+      { id: 264, text: "答案是否定的。", category: "negative" },
+      { id: 265, text: "这不是正确的选择。", category: "negative" },
+      { id: 266, text: "你需要放弃。", category: "negative" },
+      { id: 267, text: "这条路行不通。", category: "negative" },
+      { id: 268, text: "你会后悔的。", category: "negative" },
+      { id: 269, text: "不要这样做。", category: "negative" },
+      { id: 270, text: "这是错误的。", category: "negative" },
+
+      // 幽默答案 (5% - 15条)
+      { id: 271, text: "42。", category: "humor" },
+      { id: 272, text: "问我同事，他更懂。", category: "humor" },
+      { id: 273, text: "我也在等答案。", category: "humor" },
+      { id: 274, text: "这要看心情。", category: "humor" },
+      { id: 275, text: "你确定要问这个？", category: "humor" },
+      { id: 276, text: "让我想想...算了。", category: "humor" },
+      { id: 277, text: "这个问题太深奥了。", category: "humor" },
+      { id: 278, text: "答案在另一本书里。", category: "humor" },
+      { id: 279, text: "你需要先问自己。", category: "humor" },
+      { id: 280, text: "这是个秘密。", category: "humor" },
+      { id: 281, text: "我不告诉你。", category: "humor" },
+      { id: 282, text: "你猜。", category: "humor" },
+      { id: 283, text: "这是一个好问题。", category: "humor" },
+      { id: 284, text: "让我假装没听到。", category: "humor" },
+      { id: 285, text: "答案可能让你失望。", category: "humor" },
+
+      // 神秘哲理 (5% - 15条)
+      { id: 286, text: "当你准备好时，答案自现。", category: "mystery" },
+      { id: 287, text: "问题本身就是答案。", category: "mystery" },
+      { id: 288, text: "一切皆有定数。", category: "mystery" },
+      { id: 289, text: "答案在你心中。", category: "mystery" },
+      { id: 290, text: "时间会证明一切。", category: "mystery" },
+      { id: 291, text: "命运自有安排。", category: "mystery" },
+      { id: 292, text: "答案在风中飘荡。", category: "mystery" },
+      { id: 293, text: "你会明白的。", category: "mystery" },
+      { id: 294, text: "一切都在变化。", category: "mystery" },
+      { id: 295, text: "答案就在问题中。", category: "mystery" },
+      { id: 296, text: "顺其自然。", category: "mystery" },
+      { id: 297, text: "答案在梦中。", category: "mystery" },
+      { id: 298, text: "一切皆有可能。", category: "mystery" },
+      { id: 299, text: "答案在星空下。", category: "mystery" },
+      { id: 300, text: "当你不再寻找，答案就会出现。", category: "mystery" },
+    ];
+
+    // 状态管理
+    const state = {
+      currentPage: 0,
+      isFlipping: false,
+      history: [],
+      pageNumber: 1
+    };
+
+    // 简单哈希函数
+    function simpleHash(str) {
+      let hash = 0;
+      for (let i = 0; i < str.length; i++) {
+        const char = str.charCodeAt(i);
+        hash = ((hash << 5) - hash) + char;
+        hash = hash & hash;
+      }
+      return Math.abs(hash);
+    }
+
+    // 获取答案
+    function getAnswer(input) {
+      // 方式 1：数字直接索引
+      if (/^\d+$/.test(input)) {
+        const num = parseInt(input);
+        if (num > 0 && num <= ANSWERS.length) {
+          return ANSWERS[num - 1];
+        }
+      }
+
+      // 方式 2：问题哈希索引
+      const hash = simpleHash(input);
+      const index = hash % ANSWERS.length;
+      return ANSWERS[index];
+    }
+
+    // 翻页到答案
+    function flipToAnswer(answer) {
+      if (state.isFlipping) return;
+
+      state.isFlipping = true;
+      const inputPage = document.querySelector('.input-page');
+      const answerPage = document.querySelector('.answer-page');
+      const answerContent = answerPage.querySelector('.answer-content');
+      const pageNumberSpan = answerPage.querySelector('.current-page-num');
+
+      // 设置答案内容
+      answerContent.textContent = answer.text;
+      answerContent.className = `answer-content category-${answer.category}`;
+      pageNumberSpan.textContent = state.pageNumber;
+
+      // 开始翻页动画
+      inputPage.classList.add('flipping');
+
+      setTimeout(() => {
+        inputPage.classList.remove('current', 'flipping');
+        inputPage.classList.add('flipped');
+        answerPage.classList.add('current');
+        state.isFlipping = false;
+        state.currentPage = 2;
+      }, 1200);
+
+      // 添加到历史记录
+      addToHistory(answer);
+      state.pageNumber++;
+    }
+
+    // 返回输入页
+    function flipToInput() {
+      if (state.isFlipping) return;
+
+      state.isFlipping = true;
+      const inputPage = document.querySelector('.input-page');
+      const answerPage = document.querySelector('.answer-page');
+
+      answerPage.classList.add('flipping');
+
+      setTimeout(() => {
+        answerPage.classList.remove('current', 'flipping');
+        answerPage.classList.add('flipped');
+        inputPage.classList.remove('flipped');
+        inputPage.classList.add('current');
+        state.isFlipping = false;
+        state.currentPage = 1;
+
+        // 清空输入框
+        document.querySelector('.question-input').value = '';
+        document.querySelector('.question-input').focus();
+      }, 1200);
+    }
+
+    // 添加到历史记录
+    function addToHistory(answer) {
+      state.history.push({
+        answer: answer.text,
+        category: answer.category,
+        timestamp: Date.now()
+      });
+      // 只保留最近20条
+      if (state.history.length > 20) {
+        state.history = state.history.slice(-20);
+      }
+      localStorage.setItem('book-history', JSON.stringify(state.history));
+    }
+
+    // 提交处理
+    function handleSubmit() {
+      const input = document.querySelector('.question-input').value.trim();
+      if (!input) return;
+
+      const answer = getAnswer(input);
+      flipToAnswer(answer);
+    }
+
+    // 事件绑定
+    document.addEventListener('DOMContentLoaded', () => {
+      // 封面 -> 输入页
+      document.querySelector('.start-btn').addEventListener('click', () => {
+        const cover = document.querySelector('.cover-page');
+        const inputPage = document.querySelector('.input-page');
+
+        cover.classList.remove('current');
+        cover.classList.add('flipped');
+        inputPage.classList.add('current');
+        state.currentPage = 1;
+
+        setTimeout(() => {
+          document.querySelector('.question-input').focus();
+        }, 300);
+      });
+
+      // 提交答案
+      document.querySelector('.submit-btn').addEventListener('click', handleSubmit);
+      document.querySelector('.question-input').addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') {
+          handleSubmit();
+        }
+      });
+
+      // 返回按钮
+      document.querySelector('.back-btn').addEventListener('click', flipToInput);
+
+      // 再翻一页
+      document.querySelector('.next-btn').addEventListener('click', flipToInput);
+
+      // 加载历史记录
+      const savedHistory = localStorage.getItem('book-history');
+      if (savedHistory) {
+        try {
+          state.history = JSON.parse(savedHistory);
+        } catch (e) {
+          state.history = [];
+        }
+      }
+    });
+  </script>
+</body>
+</html>

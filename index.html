@@ -1167,7 +1167,8 @@
     if (document.readyState === 'loading') {
       document.addEventListener('DOMContentLoaded', initApp);
     } else {
-      initApp();
+      // 使用 setTimeout 确保在所有脚本执行完毕后再初始化
+      setTimeout(initApp, 0);
     }
   </script>
 </body>

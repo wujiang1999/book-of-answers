@@ -1015,6 +1015,7 @@
       setTimeout(() => {
         els.input.classList.remove('current', 'flipping');
         els.input.classList.add('flipped');
+        els.answer.classList.remove('flipped');
         els.answer.classList.add('current');
         state.isFlipping = false;
         state.currentPage = 2;

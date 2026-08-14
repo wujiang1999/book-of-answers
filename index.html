@@ -1163,13 +1163,29 @@
       }
     }
 
-    // 确保 DOM 加载完成后初始化
-    if (document.readyState === 'loading') {
-      document.addEventListener('DOMContentLoaded', initApp);
-    } else {
-      // 使用 setTimeout 确保在所有脚本执行完毕后再初始化
-      setTimeout(initApp, 0);
-    }
+    // 初始化应用（多重保障机制）
+    (function() {
+      var initialized = false;
+
+      function doInit() {
+        if (initialized) return;
+        initialized = true;
+        initApp();
+      }
+
+      // 方法1: DOMContentLoaded 或直接执行
+      if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', doInit);
+      } else {
+        doInit();
+      }
+
+      // 方法2: window load 事件（备用）
+      window.addEventListener('load', doInit);
+
+      // 方法3: setTimeout 延迟执行（备用）
+      setTimeout(doInit, 100);
+    })();
   </script>
 </body>
 </html>

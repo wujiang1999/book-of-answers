@@ -168,6 +168,10 @@
       z-index: 10;
     }
 
+    .page:not(.current) {
+      pointer-events: none;
+    }
+
     .page.flipped {
       transform: rotateY(-180deg);
     }
@@ -1121,9 +1125,13 @@
       animate();
     }
 
-    // 事件绑定
-    document.addEventListener('DOMContentLoaded', () => {
-      initParticles();
+    // 初始化函数
+    function initApp() {
+      try {
+        initParticles();
+      } catch (e) {
+        console.warn('粒子动画初始化失败:', e);
+      }
 
       // 封面 -> 输入页
       document.getElementById('startBtn').addEventListener('click', () => {
@@ -1153,7 +1161,14 @@
           state.history = [];
         }
       }
-    });
+    }
+
+    // 确保 DOM 加载完成后初始化
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', initApp);
+    } else {
+      initApp();
+    }
   </script>
 </body>
 </html>
